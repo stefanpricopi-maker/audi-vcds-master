@@ -3,13 +3,15 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
   pull_request:
-    branches: [main, master]
+
+permissions:
+  contents: read
 
 env:
   LLM_MODE: disabled
   OPENAI_API_KEY: ci-placeholder-not-used
+  ANONYMIZED_TELEMETRY: "False"
 
 jobs:
   pytest-unit:
@@ -22,16 +24,19 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install --prefer-binary -r requirements-dev.txt
 
       - name: Prepare local data dirs
         run: mkdir -p data/uploaded-logs data/vectorstore data/ingested-uploads
 
-      - name: Pytest (unit + static; e2e skipped without E2E)
-        run: pytest tests/ -q --tb=short
+      - name: Pytest (fără tests/e2e — acolo e jobul Playwright)
+        run: pytest tests/ -q --tb=short --ignore=tests/e2e
 
   playwright-e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -40,7 +45,15 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install --prefer-binary -r requirements-dev.txt
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements-dev.txt') }}
 
       - name: Install Playwright Chromium + system deps
         run: python -m playwright install --with-deps chromium

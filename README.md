@@ -77,7 +77,7 @@ docker run --rm -p 8088:8088 -e LLM_MODE=disabled \
 
 Apoi: `http://127.0.0.1:8088/` și `/docs`. Pentru manuale PDF, montează și `data/manuals` sau rulează ingest în container.
 
-Pe GitHub: workflow **CI** (`.github/workflows/ci.yml`) — job **pytest-unit** și **playwright-e2e** (trace/video la eșec; artifact **`playwright-e2e-failure`** → `test-results/`). Local: `bash scripts/e2e_playwright.sh`.
+Pe GitHub: workflow **CI** (`.github/workflows/ci.yml`) — la fiecare push/PR: job **pytest-unit** (`pytest … --ignore=tests/e2e`) și **playwright-e2e** (trace/video la eșec; artifact **`playwright-e2e-failure`** → `test-results/`). Local: `bash scripts/ci_local.sh` / `bash scripts/e2e_playwright.sh`.
 
 **Dependabot:** `.github/dependabot.yml` — `pip` și `github-actions` la rădăcina acestui repo.
 

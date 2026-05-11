@@ -43,19 +43,19 @@ def e2e_server() -> str:
             "127.0.0.1",
             "--port",
             str(port),
+            "--log-level",
+            "warning",
         ],
         cwd=str(_ROOT),
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
     )
     base = f"http://127.0.0.1:{port}"
     deadline = time.time() + 90
     last_err: Exception | None = None
     while time.time() < deadline:
         if proc.poll() is not None:
-            err = proc.stderr.read().decode("utf-8", errors="replace") if proc.stderr else ""
-            proc.stderr.close()
-            raise RuntimeError(f"uvicorn exited early (code {proc.returncode}): {err}")
+            raise RuntimeError(f"uvicorn exited early (code {proc.returncode}); check app startup locally")
         try:
             urllib.request.urlopen(base + "/health", timeout=2)
             break
