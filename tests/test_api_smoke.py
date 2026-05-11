@@ -118,22 +118,35 @@ def test_logs_uploaded(client: TestClient) -> None:
         assert it.get("kind") in ("autoscan", "measuring", "unknown")
 
 
-def test_analyze_latest_log_uploaded(client: TestClient) -> None:
+def test_analyze_latest_log_uploaded(client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fără fișier în UPLOADED_LOGS_DIR, API ridică FileNotFoundError (propagat de TestClient) — CI are folder gol."""
+    import app.main as main
+
+    log_path = tmp_path / "1700000001__pytest_minimal.csv"
+    shutil.copyfile(_FIXTURES / "uploaded_snapshot_minimal.csv", log_path)
+    monkeypatch.setattr(main, "UPLOADED_LOGS_DIR", tmp_path)
+
     r = client.get("/analyze-latest-log", params={"source": "uploaded"})
-    assert r.status_code in (200, 400)
-    if r.status_code == 200:
-        data = r.json()
-        assert "faults" in data
-        assert "format" in data
+    assert r.status_code == 200
+    data = r.json()
+    assert "faults" in data
+    assert "format" in data
+    assert any(f.get("code") == "P0299" for f in data.get("faults", []))
 
 
-def test_report_latest_log_uploaded(client: TestClient) -> None:
+def test_report_latest_log_uploaded(client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import app.main as main
+
+    log_path = tmp_path / "1700000002__pytest_minimal.csv"
+    shutil.copyfile(_FIXTURES / "uploaded_snapshot_minimal.csv", log_path)
+    monkeypatch.setattr(main, "UPLOADED_LOGS_DIR", tmp_path)
+
     r = client.get("/report-latest-log", params={"source": "uploaded"})
-    assert r.status_code in (200, 400)
-    if r.status_code == 200:
-        data = r.json()
-        assert "report_markdown" in data
-        assert len(data["report_markdown"]) > 20
+    assert r.status_code == 200
+    data = r.json()
+    assert "report_markdown" in data
+    assert len(data["report_markdown"]) > 20
+    assert "P0299" in data["report_markdown"]
 
 
 def test_vcds_context_when_dir_unset(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
