@@ -5,8 +5,10 @@ on:
   push:
   pull_request:
 
+# actions: write — necesar pentru actions/cache și upload-artifact (altfel 403 la API-ul de cache).
 permissions:
   contents: read
+  actions: write
 
 env:
   LLM_MODE: disabled
