@@ -77,9 +77,9 @@ docker run --rm -p 8088:8088 -e LLM_MODE=disabled \
 
 Apoi: `http://127.0.0.1:8088/` și `/docs`. Pentru manuale PDF, montează și `data/manuals` sau rulează ingest în container.
 
-Dacă proiectul stă într-un monorepo cu GitHub: workflow **audi-vcds-master CI** (`.github/workflows/audi-vcds-master-ci.yml`) rulează la modificări în `projects/audi-vcds-master/`: job **pytest-unit** (toate testele; e2e sunt sărite fără `E2E=1`) și job **playwright-e2e** (`playwright install --with-deps chromium`, apoi `E2E=1 pytest tests/e2e` cu trace/video la eșec). La eșecul jobului Playwright, artifact **`audi-vcds-master-playwright-failure`** conține `test-results/` (trace-uri, capturi). Local: `bash scripts/e2e_playwright.sh`.
+Pe GitHub: workflow **CI** (`.github/workflows/ci.yml`) — job **pytest-unit** și **playwright-e2e** (trace/video la eșec; artifact **`playwright-e2e-failure`** → `test-results/`). Local: `bash scripts/e2e_playwright.sh`.
 
-**Dependabot** (`.github/dependabot.yml` la rădăcina monorepo-ului): `pip` în `projects/audi-vcds-master` (săptămânal) și `github-actions` la `/` (lunar).
+**Dependabot:** `.github/dependabot.yml` — `pip` și `github-actions` la rădăcina acestui repo.
 
 **Observabilitate:** fiecare `POST /chat` scrie o linie JSON în logger-ul `audi_vcds.chat` (lungime mesaj, bifări context, `llm_mode`) — fără conținutul mesajului. Activează nivel `INFO` pentru logger sau root ca să o vezi în consolă / agregator.
 

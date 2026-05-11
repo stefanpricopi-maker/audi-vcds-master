@@ -1,0 +1,60 @@
+# CI: pytest unit + Playwright E2E (Chromium). Repo rădăcină = acest proiect.
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  LLM_MODE: disabled
+  OPENAI_API_KEY: ci-placeholder-not-used
+
+jobs:
+  pytest-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Prepare local data dirs
+        run: mkdir -p data/uploaded-logs data/vectorstore data/ingested-uploads
+
+      - name: Pytest (unit + static; e2e skipped without E2E)
+        run: pytest tests/ -q --tb=short
+
+  playwright-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Install Playwright Chromium + system deps
+        run: python -m playwright install --with-deps chromium
+
+      - name: Prepare local data dirs
+        run: mkdir -p data/uploaded-logs data/vectorstore data/ingested-uploads
+
+      - name: Playwright E2E
+        run: E2E=1 pytest tests/e2e -q --tb=short --tracing=retain-on-failure --video=retain-on-failure
+
+      - name: Upload Playwright traces and videos on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-failure
+          path: test-results
+          if-no-files-found: ignore
