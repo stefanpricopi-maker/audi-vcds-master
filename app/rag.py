@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import os
+import warnings
 from pathlib import Path
 from typing import Any
 
-import chromadb
+# Importul chromadb declanșează DeprecationWarning din stdlib (asyncio.iscoroutinefunction) pe Py 3.14+;
+# cu PYTHONWARNINGS=error sau pytest -W error CI-ul pică înainte de orice test.
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    import chromadb  # noqa: E402
 
 
 class RAGIndex:
