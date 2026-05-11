@@ -1,0 +1,30 @@
+; VCDS Auto-Scan (synthetic) — for parser testing
+; Vehicle: Audi A4 B7 2.0 TDI (BLB) — example only
+; This file is meant to validate /analyze-latest-log format=vcds_autoscan.
+
+Address 01: Engine
+16683 - Boost Pressure Regulation: Control Range Not Reached
+P0299 - 000 - Control Range Not Reached - Intermittent
+Freeze Frame:
+RPM: 2780 /min
+Load: 72.5 %
+Boost Specified: 2150 mbar
+Boost Actual: 1480 mbar
+N75 Duty: 78.0 %
+Coolant Temp: 86.0 C
+
+16485 - Mass Air Flow Sensor (G70): Implausible Signal
+P0101 - 000 - Implausible Signal - Intermittent
+Freeze Frame:
+RPM: 1850 /min
+MAF: 240 mg/str
+Boost Specified: 1450 mbar
+Boost Actual: 1430 mbar
+
+Address 03: ABS Brakes
+00290 - ABS Wheel Speed Sensor Rear Left (G46)
+            008 - Implausible Signal - Intermittent
+Freeze Frame:
+Vehicle Speed: 0 km/h
+Voltage: 12.2 V
+

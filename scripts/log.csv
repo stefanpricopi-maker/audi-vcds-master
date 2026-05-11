@@ -1,0 +1,13 @@
+; VCDS sample log (synthetic) for testing upload + parsing
+; Vehicle: Audi A4 B7 2.0 TDI (BLB) — example only
+;
+; Common scenario: underboost (P0299) during acceleration
+;
+; NOTE: This is NOT a real VCDS export format guarantee. It is "good enough"
+; to test the upload + "latest uploaded log" pipeline.
+
+Address,Subsystem,FaultCode,FaultText,Status,Frequency,Mil,FreezeFrame
+01-Engine,,P0299,Turbo/Super Charger Underboost,Intermittent,2,On,"RPM=2780;Load=72.5%;BoostSpecified(mbar)=2150;BoostActual(mbar)=1480;N75Duty(%)=78.0;MAF(mg/str)=820;EGR(%)=10;Coolant(C)=86"
+01-Engine,,P0101,MAF Sensor Range/Performance,Intermittent,1,Off,"RPM=1850;Load=38.0%;MAF(mg/str)=240;BoostSpecified(mbar)=1450;BoostActual(mbar)=1430;Coolant(C)=84"
+03-ABS Brakes,,00290,ABS Wheel Speed Sensor Rear Left (G46),Intermittent,1,Off,"VehicleSpeed(km/h)=0;Battery(V)=12.2"
+

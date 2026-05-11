@@ -1,0 +1,2094 @@
+<!doctype html>
+<html lang="ro">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Audi VCDS Master</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0b1020;
+        --card: rgba(255, 255, 255, 0.06);
+        --card2: rgba(255, 255, 255, 0.04);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.66);
+        --border: rgba(255, 255, 255, 0.14);
+        --accent: #6ee7ff;
+        --accent2: #a78bfa;
+        --danger: #ff6b6b;
+        /* bandă stânga pentru panoul Actions (loguri / API) */
+        --zone-actions-accent: #fbbf24;
+        /* bandă stânga pentru panoul Settings (parametri query) */
+        --zone-settings-accent: #4ade80;
+        /* bandă stânga pentru panoul Upload log */
+        --zone-upload-accent: #fb923c;
+        --zone-case-accent: #94a3b8;
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f6f7fb;
+          --card: rgba(0, 0, 0, 0.05);
+          --card2: rgba(0, 0, 0, 0.03);
+          --text: rgba(0, 0, 0, 0.88);
+          --muted: rgba(0, 0, 0, 0.62);
+          --border: rgba(0, 0, 0, 0.14);
+          --accent: #0ea5e9;
+          --accent2: #7c3aed;
+          --danger: #dc2626;
+          --zone-actions-accent: #d97706;
+          --zone-settings-accent: #16a34a;
+          --zone-upload-accent: #ea580c;
+          --zone-case-accent: #64748b;
+        }
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+          Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: radial-gradient(1200px 700px at 10% 10%, rgba(110, 231, 255, 0.18), transparent 60%),
+          radial-gradient(900px 600px at 90% 20%, rgba(167, 139, 250, 0.18), transparent 55%),
+          var(--bg);
+        color: var(--text);
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 28px 18px 60px;
+      }
+
+      header {
+        display: flex;
+        gap: 14px;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+
+      .workshop-context {
+        font-size: 12px;
+        color: var(--muted);
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px dashed var(--border);
+        background: var(--card2);
+        margin-bottom: 14px;
+        line-height: 1.5;
+      }
+
+      .tag-advanced {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 2px 6px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        margin-left: 6px;
+        vertical-align: middle;
+      }
+
+      /* Panou context caz (doar local) */
+      .zone-case.panel-collapsible {
+        border-radius: 12px;
+        background: linear-gradient(165deg, rgba(148, 163, 184, 0.12), rgba(148, 163, 184, 0.02) 55%);
+        box-shadow: inset 4px 0 0 0 var(--zone-case-accent), 0 0 0 1px var(--border);
+      }
+      .zone-case.panel-collapsible > summary {
+        padding: 10px 12px 8px 16px;
+      }
+      .zone-case .panel-body {
+        margin-top: 0;
+        padding: 8px 14px 14px 18px;
+        border-top: 1px solid var(--border);
+      }
+      @media (prefers-color-scheme: light) {
+        .zone-case.panel-collapsible {
+          background: linear-gradient(165deg, rgba(100, 116, 139, 0.1), rgba(100, 116, 139, 0.02) 55%);
+        }
+      }
+
+      .title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: 0.2px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--card2);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      @media (min-width: 980px) {
+        .grid {
+          grid-template-columns: 1.15fr 0.85fr;
+        }
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, var(--card), var(--card2));
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
+        backdrop-filter: blur(10px);
+      }
+
+      .card h2 {
+        margin: 0 0 10px;
+        font-size: 14px;
+        color: var(--text);
+        letter-spacing: 0.2px;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      input[type="text"],
+      input[type="number"],
+      textarea,
+      select {
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.14);
+        color: var(--text);
+        padding: 10px 10px;
+        border-radius: 10px;
+        outline: none;
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 13px;
+      }
+
+      textarea {
+        min-height: 92px;
+        resize: vertical;
+        line-height: 1.35;
+      }
+
+      @media (prefers-color-scheme: light) {
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+          background: rgba(255, 255, 255, 0.7);
+        }
+      }
+
+      button {
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(110, 231, 255, 0.16), rgba(167, 139, 250, 0.12));
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+      }
+      button:hover {
+        border-color: rgba(110, 231, 255, 0.5);
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      @media (min-width: 980px) {
+        .split {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      pre {
+        margin: 0;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.18);
+        overflow: auto;
+        max-height: 520px;
+        font-size: 12px;
+        line-height: 1.35;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      @media (prefers-color-scheme: light) {
+        pre {
+          background: rgba(255, 255, 255, 0.75);
+        }
+      }
+
+      .status {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .status.error {
+        color: var(--danger);
+      }
+      .status.ok {
+        color: var(--accent);
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+          "Courier New", monospace;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      .tabbtn {
+        padding: 8px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        background: var(--card2);
+      }
+      .tabbtn.active {
+        border-color: rgba(110, 231, 255, 0.5);
+        background: rgba(110, 231, 255, 0.12);
+      }
+      .pane {
+        display: none;
+      }
+      .pane.active {
+        display: block;
+      }
+      .md {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.18);
+        max-height: 520px;
+        overflow: auto;
+      }
+      @media (prefers-color-scheme: light) {
+        .md {
+          background: rgba(255, 255, 255, 0.75);
+        }
+      }
+      .md h1, .md h2, .md h3 {
+        margin: 10px 0 6px;
+      }
+      .md code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+          "Courier New", monospace;
+        font-size: 12px;
+        padding: 2px 6px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(0,0,0,0.12);
+      }
+      .md pre {
+        max-height: none;
+        white-space: pre;
+      }
+
+      .info-tips {
+        margin: 0 0 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--card2);
+        font-size: 12px;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+      .info-tips strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .info-tips ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+      .info-tips li {
+        margin: 5px 0;
+      }
+
+      .panel-collapsible {
+        margin: 0;
+      }
+      .panel-collapsible > summary {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+        user-select: none;
+        padding: 2px 0 4px;
+      }
+      .panel-collapsible > summary::-webkit-details-marker {
+        display: none;
+      }
+      .panel-summary-title {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+        color: var(--text);
+      }
+      .panel-summary-title::before {
+        content: "▸ ";
+        display: inline-block;
+        transition: transform 0.15s ease;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .panel-collapsible[open] .panel-summary-title::before {
+        transform: rotate(90deg);
+      }
+      .panel-summary-hint {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .panel-body {
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+        margin-top: 8px;
+      }
+      .label-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .field-tip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--muted);
+        line-height: 1;
+        flex-shrink: 0;
+        cursor: help;
+      }
+
+      .flow-step-label {
+        margin: 14px 0 6px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .flow-step-label:first-of-type {
+        margin-top: 4px;
+      }
+
+      /* Spațiu între panourile retractabile din același card */
+      .card > *:not(:first-child) {
+        margin-top: 14px;
+      }
+
+      .rag-section-wrap--hidden {
+        display: none;
+      }
+
+      .case-history-list {
+        list-style: none;
+        margin: 8px 0;
+        padding: 0;
+      }
+      .case-history-list li {
+        margin-bottom: 6px;
+      }
+      .case-history-list button {
+        width: 100%;
+        text-align: left;
+        font-weight: 500;
+        font-size: 12px;
+      }
+
+      /* Upload fișier log în UPLOADED_LOGS_DIR — primul pas înainte de Actions */
+      .zone-upload.panel-collapsible {
+        border-radius: 12px;
+        background: linear-gradient(165deg, rgba(251, 146, 60, 0.14), rgba(251, 146, 60, 0.02) 55%);
+        box-shadow: inset 4px 0 0 0 var(--zone-upload-accent), 0 0 0 1px var(--border);
+      }
+      .zone-upload.panel-collapsible > summary {
+        padding: 10px 12px 8px 16px;
+      }
+      .zone-upload .panel-body {
+        margin-top: 0;
+        padding: 8px 14px 14px 18px;
+        border-top: 1px solid var(--border);
+      }
+      @media (prefers-color-scheme: light) {
+        .zone-upload.panel-collapsible {
+          background: linear-gradient(165deg, rgba(234, 88, 12, 0.1), rgba(234, 88, 12, 0.02) 55%);
+        }
+      }
+
+      /* Loguri + apeluri API (Actions) — același tip de chenar ca RAG / Chat */
+      .zone-actions.panel-collapsible {
+        border-radius: 12px;
+        background: linear-gradient(165deg, rgba(251, 191, 36, 0.14), rgba(251, 191, 36, 0.02) 55%);
+        box-shadow: inset 4px 0 0 0 var(--zone-actions-accent), 0 0 0 1px var(--border);
+      }
+      .zone-actions.panel-collapsible > summary {
+        padding: 10px 12px 8px 16px;
+      }
+      .zone-actions .panel-body {
+        margin-top: 0;
+        padding: 8px 14px 14px 18px;
+        border-top: 1px solid var(--border);
+      }
+      @media (prefers-color-scheme: light) {
+        .zone-actions.panel-collapsible {
+          background: linear-gradient(165deg, rgba(217, 119, 6, 0.1), rgba(217, 119, 6, 0.02) 55%);
+        }
+      }
+
+      /* Parametri API (Settings) — sub Chat în fluxul principal */
+      .zone-settings.panel-collapsible {
+        border-radius: 12px;
+        background: linear-gradient(165deg, rgba(74, 222, 128, 0.12), rgba(74, 222, 128, 0.02) 55%);
+        box-shadow: inset 4px 0 0 0 var(--zone-settings-accent), 0 0 0 1px var(--border);
+      }
+      .zone-settings.panel-collapsible > summary {
+        padding: 10px 12px 8px 16px;
+      }
+      .zone-settings .panel-body {
+        margin-top: 0;
+        padding: 8px 14px 14px 18px;
+        border-top: 1px solid var(--border);
+      }
+      @media (prefers-color-scheme: light) {
+        .zone-settings.panel-collapsible {
+          background: linear-gradient(165deg, rgba(22, 163, 74, 0.1), rgba(22, 163, 74, 0.02) 55%);
+        }
+      }
+
+      /* Zonă diferită de „loguri / Actions”: index RAG (cunoștințe) */
+      .zone-rag.panel-collapsible {
+        border-radius: 12px;
+        background: linear-gradient(165deg, rgba(167, 139, 250, 0.12), rgba(167, 139, 250, 0.02) 55%);
+        box-shadow: inset 4px 0 0 0 var(--accent2), 0 0 0 1px var(--border);
+      }
+      .zone-rag.panel-collapsible > summary {
+        padding: 10px 12px 8px 16px;
+      }
+      .zone-rag .panel-body {
+        margin-top: 0;
+        padding: 8px 14px 14px 18px;
+        border-top: 1px solid var(--border);
+      }
+      @media (prefers-color-scheme: light) {
+        .zone-rag.panel-collapsible {
+          background: linear-gradient(165deg, rgba(124, 58, 237, 0.1), rgba(124, 58, 237, 0.02) 55%);
+        }
+      }
+
+      /* Chat + search: interogare model + RAG, nu ingest pe disc la fel ca mai sus */
+      .zone-chat.panel-collapsible {
+        border-radius: 12px;
+        background: linear-gradient(165deg, rgba(110, 231, 255, 0.12), rgba(110, 231, 255, 0.02) 55%);
+        box-shadow: inset 4px 0 0 0 var(--accent), 0 0 0 1px var(--border);
+      }
+      .zone-chat.panel-collapsible > summary {
+        padding: 10px 12px 8px 16px;
+      }
+      .zone-chat .panel-body {
+        margin-top: 0;
+        padding: 8px 14px 14px 18px;
+        border-top: 1px solid var(--border);
+      }
+      @media (prefers-color-scheme: light) {
+        .zone-chat.panel-collapsible {
+          background: linear-gradient(165deg, rgba(14, 165, 233, 0.1), rgba(14, 165, 233, 0.02) 55%);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="title">
+          <h1>Audi VCDS Master</h1>
+          <div class="subtitle">
+            Flux atelier: încarcă exportul VCDS → setezi sursa → vezi fișierele → analiză sau raport → întrebări la
+            asistent. Numele rutei API apare la hover pe fiecare buton. Datele din „Context caz” și bifările locale
+            rămân în browser; logurile merg la serverul unde rulează aplicația.
+          </div>
+        </div>
+        <div class="pill">
+          <span>API</span>
+          <span class="mono" id="apiBase"></span>
+        </div>
+      </header>
+
+      <div id="workshopContext" class="workshop-context" aria-live="polite"></div>
+
+      <div class="row" style="margin-bottom: 2px; align-items: center">
+        <label
+          style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); cursor: pointer"
+        >
+          <input
+            type="checkbox"
+            id="chkShowRagIndex"
+            title="Fără bifă: chat fără căutare în manual (panoul RAG rămâne ascuns). Bifează pentru index documente, GET /search în UI și fragmente RAG la POST /chat."
+          />
+          Arată index documente (RAG, avansat)
+        </label>
+        <span class="muted" style="font-size: 12px">— preferința se salvează în browser.</span>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <details class="panel-collapsible zone-case" id="caseContextDetails">
+            <summary>
+              <span class="panel-summary-title">Context caz</span>
+              <span class="panel-summary-hint">Mașină, VIN, simptom — doar în browser; se adaugă la mesajul Chat</span>
+            </summary>
+            <div class="panel-body">
+              <div class="info-tips" role="note" aria-label="Indicații context caz">
+                <strong>Pe scurt</strong>
+                <ul>
+                  <li>
+                    Datele nu merg la server la salvare; se lipesc în fața textului când apeși
+                    <strong>Trimite întrebarea</strong> (vezi panoul Chat).
+                  </li>
+                  <li>Rămân pe acest browser (același domeniu / port).</li>
+                </ul>
+              </div>
+              <label for="caseVehicle" class="label-row">Mașină / notă scurtă (opțional)</label>
+              <input
+                id="caseVehicle"
+                type="text"
+                placeholder="ex: A4 B9 2.0 TDI, 180k km"
+                title="Notă scurtă despre vehicul; salvată local."
+              />
+              <div style="height: 10px"></div>
+              <label for="caseVin" class="label-row">VIN (opțional)</label>
+              <input id="caseVin" type="text" maxlength="32" placeholder="17 caractere sau parțial" title="Identificator șasiu; opțional." />
+              <div style="height: 10px"></div>
+              <label for="caseSymptom" class="label-row">Simptom sau întrebare pentru mașină</label>
+              <textarea
+                id="caseSymptom"
+                placeholder="ex: pierdere putere la rece, MIL intermitent după drum lung…"
+                title="Text liber; devine prefix la Chat."
+              ></textarea>
+              <div style="height: 10px"></div>
+              <div class="row">
+                <button type="button" id="btnCaseSave" title="Salvează local pe acest browser (localStorage).">
+                  Memorează în browser
+                </button>
+                <button type="button" id="btnCaseClear" title="Șterge câmpurile și datele locale ale cazului.">
+                  Șterge contextul
+                </button>
+              </div>
+              <div class="muted" style="margin-top: 12px">Istoric cazuri (acest browser)</div>
+              <ul id="caseHistoryList" class="case-history-list" aria-label="Istoric cazuri salvate local"></ul>
+              <div class="row">
+                <button type="button" id="btnCaseHistoryAdd" title="Adaugă în listă datele curente din caz + logul selectat (dacă există).">
+                  Salvează cazul în istoric
+                </button>
+                <button type="button" id="btnCaseHistoryClear" title="Șterge toate intrările din istoric.">
+                  Șterge istoricul
+                </button>
+              </div>
+            </div>
+          </details>
+
+          <details class="panel-collapsible zone-upload" id="uploadLogDetails">
+            <summary>
+              <span class="panel-summary-title">Încarcă scanarea</span>
+              <span class="panel-summary-hint">Pas 1: export de pe VCDS (.csv / .log / .txt)</span>
+            </summary>
+            <div class="panel-body">
+              <div class="info-tips" role="note" aria-label="Indicații upload log">
+                <strong>Ce faci aici</strong>
+                <ul>
+                  <li>
+                    Opțional: completează <strong>Context caz</strong> (deasupra) — se adaugă automat la mesajul din Chat.
+                  </li>
+                  <li>
+                    Alege din PC un export din VCDS (de obicei <span class="mono">.csv</span>,
+                    <span class="mono">.log</span> sau <span class="mono">.txt</span> — orice fișier cu textul scanării).
+                  </li>
+                  <li>
+                    Apasă <strong>Upload</strong>: fișierul este salvat în folderul din
+                    <span class="mono">UPLOADED_LOGS_DIR</span> (vezi <span class="mono">.env</span>), cu dată în nume.
+                  </li>
+                  <li>
+                    Cel mai recent upload devine <strong>„latest uploaded log”</strong> pentru API: la Chat bifează
+                    <span class="mono">include_latest_uploaded_log</span>, sau la <span class="mono">source</span> alege
+                    <span class="mono">uploaded</span> și reîncarcă lista din <span class="mono">GET /logs</span>.
+                  </li>
+                </ul>
+              </div>
+              <div class="row">
+                <input
+                  id="fileInput"
+                  type="file"
+                  title="Selectează fișierul de log (export VCDS / text scanare)."
+                />
+                <button
+                  id="btnUpload"
+                  type="button"
+                  title="Trimite fișierul la POST /upload-log și îl salvează pe serverul local."
+                >
+                  Trimite pe server
+                </button>
+                <span id="uploadStatus" class="status"></span>
+              </div>
+              <div class="muted" style="margin-top: 10px">
+                După upload: verifică <strong>Sursă și limite</strong> (panoul următor), apoi în <strong>Scanări și
+                rapoarte</strong> actualizează lista; la Chat bifează „include ultimul fișier încărcat” dacă vrei logul
+                tocmai trimis.
+              </div>
+            </div>
+          </details>
+
+          <details class="panel-collapsible zone-settings" id="settingsDetails">
+            <summary>
+              <span class="panel-summary-title">Sursă și limite</span>
+              <span class="panel-summary-hint">Alege sursa înainte de listă / analiză; limite pentru listă, raport caz și căutare</span>
+            </summary>
+            <div class="panel-body">
+              <div class="info-tips" role="note" aria-label="Indicații setări">
+                <strong>Pe scurt</strong>
+                <ul>
+                  <li>
+                    Aceste valori se lipesc în query-string la apelurile din Actions (ex.
+                    <span class="mono">GET /logs?source=…&amp;limit=…</span>) și la <span class="mono">GET /search</span>
+                    (<span class="mono">k</span>).
+                  </li>
+                  <li>
+                    <span class="mono">uploaded</span> = loguri încărcate prin „Upload log”;
+                    <span class="mono">vcds</span> = folderul <span class="mono">VCDS_LOG_DIR</span> din
+                    <span class="mono">.env</span>.
+                  </li>
+                  <li>
+                    Dacă <span class="mono">source=vcds</span> fără <span class="mono">VCDS_LOG_DIR</span>, multe rute
+                    răspund cu <span class="mono">400</span>.
+                  </li>
+                </ul>
+              </div>
+              <div class="split">
+                <div>
+                  <label for="source" class="label-row">
+                    Unde sunt logurile
+                    <span
+                      class="field-tip"
+                      title="uploaded: fișiere din UPLOADED_LOGS_DIR (upload în UI). vcds: fișiere din folderul Ross-Tech / VCDS setat în VCDS_LOG_DIR. Schimbă sursa pentru GET /logs, analyze, report, snapshot path etc."
+                      aria-label="uploaded = loguri încărcate; vcds = folder VCDS pe disc"
+                      >i</span>
+                  </label>
+                  <select
+                    id="source"
+                    title="Parametru API source= : uploaded | vcds"
+                  >
+                    <option value="uploaded" selected>Încărcate în app (uploaded)</option>
+                    <option value="vcds">Folder VCDS pe server (vcds)</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="limit" class="label-row">
+                    Câte fișiere în listă (max.)
+                    <span
+                      class="field-tip"
+                      title="Număr maxim de fișiere returnate de GET /logs, cele mai noi primele. Acceptat de API: 1–200."
+                      aria-label="Limită listă loguri pentru GET /logs"
+                      >i</span>
+                  </label>
+                  <input
+                    id="limit"
+                    type="number"
+                    value="30"
+                    min="1"
+                    max="200"
+                    title="Parametrul limit pentru GET /logs (1–200)."
+                  />
+                </div>
+                <div>
+                  <label for="windowHours" class="label-row">
+                    Fereastră ore (raport caz combinat)
+                    <span
+                      class="field-tip"
+                      title="Fereastra temporală (ore) în jurul fișierelor selectate la GET /report-case-from: include loguri din acel interval pentru cazul combinat."
+                      aria-label="Fereastră în ore pentru report-case-from"
+                      >i</span>
+                  </label>
+                  <input
+                    id="windowHours"
+                    type="number"
+                    value="6"
+                    min="0"
+                    max="72"
+                    title="window_hours pentru GET /report-case-from (0–72)."
+                  />
+                </div>
+                <div>
+                  <label for="k" class="label-row">
+                    Rezultate căutare în documente (k)
+                    <span
+                      class="field-tip"
+                      title="Câte fragmente (chunks) din indexul RAG returnează GET /search pentru aceeași interogare. Mai mare = mai mult context, răspuns mai lung. 1–20."
+                      aria-label="Număr de rezultate RAG la GET /search"
+                      >i</span>
+                  </label>
+                  <input id="k" type="number" value="6" min="1" max="20" title="Parametrul k pentru GET /search (1–20)." />
+                </div>
+              </div>
+              <div class="muted" style="margin-top: 10px">
+                Poți lăsa panoul închis; valorile rămân aplicate la Actions, Chat și căutare. În pagină: imediat după Upload.
+              </div>
+            </div>
+          </details>
+
+          <details class="panel-collapsible zone-actions" id="actionsDetails">
+            <summary>
+              <span class="panel-summary-title">Scanări și rapoarte</span>
+              <span class="panel-summary-hint">Listă, verificare mediu, analiză, raport — extinde pentru pași</span>
+            </summary>
+            <div class="panel-body">
+              <div class="info-tips" role="note" aria-label="Indicații Actions">
+                <strong>Flux recomandat</strong> (aceeași ordine ca mai jos)
+                <ul>
+                  <li>
+                    <strong>1.</strong> Pentru sursă <span class="mono">uploaded</span>: panoul
+                    <strong>Upload log</strong> (deasupra), apoi <strong>Settings</strong> pentru
+                    <span class="mono">source</span>; în continuare <span class="mono">GET /logs</span> umple lista.
+                  </li>
+                  <li>
+                    <strong>2.</strong> <span class="mono">GET /status</span>,
+                    <span class="mono">/vcds-context</span>, <span class="mono">/uploaded-context</span> — verifici
+                    mediul și snapshot-urile.
+                  </li>
+                  <li>
+                    <strong>3.</strong> Pe <strong>ultimul</strong> log din sursă (fără selecție în listă):
+                    <span class="mono">/analyze-latest-log</span>, <span class="mono">/report-latest-log</span>,
+                    <span class="mono">/report-case</span>.
+                  </li>
+                  <li>
+                    <strong>4.</strong> Alegi un rând în <strong>selected log</strong>:
+                    <span class="mono">/analyze-log</span>, <span class="mono">/report-log</span>,
+                    <span class="mono">/log-raw</span> (+ download .md dacă ai raport).
+                  </li>
+                  <li>
+                    <strong>5.</strong> <span class="mono">GET /report-case-from</span> — Auto-Scan + Measuring (opțional)
+                    în <span class="mono">window_hours</span> din Settings.
+                  </li>
+                </ul>
+              </div>
+              <div class="flow-step-label">1 · Actualizează lista de fișiere</div>
+              <div class="row">
+                <button
+                  id="btnLogs"
+                  type="button"
+                  title="Listează fișiere log după source= din Settings (uploaded sau vcds). Apasă primul ca să umpli selected log."
+                >
+                  Actualizează lista
+                </button>
+                <button
+                  id="btnWorkshopQuickAnalyze"
+                  type="button"
+                  title="Apel consecutiv: GET /logs apoi GET /analyze-latest-log pentru sursa curentă."
+                >
+                  Listă + analiză ultimul
+                </button>
+              </div>
+              <div class="flow-step-label">2 · Ce vede serverul (mediu, snapshot)</div>
+              <div class="row">
+                <button
+                  id="btnStatus"
+                  type="button"
+                  title="Mod LLM, căi pe disc, număr chunk-uri RAG, contoare loguri."
+                >
+                  Stare server / LLM
+                </button>
+                <button
+                  id="btnVcdsContext"
+                  type="button"
+                  title="Snapshot JSON: listă recentă + conținut log VCDS. Necesită VCDS_LOG_DIR."
+                >
+                  Snapshot folder VCDS
+                </button>
+                <button
+                  id="btnUploadedContext"
+                  type="button"
+                  title="Snapshot JSON pentru folderul UPLOADED_LOGS_DIR (upload-uri din UI)."
+                >
+                  Snapshot fișiere încărcate
+                </button>
+              </div>
+              <div class="flow-step-label">3 · Ultimul fișier din listă (fără să alegi manual)</div>
+              <div class="row">
+                <button
+                  id="btnAnalyze"
+                  type="button"
+                  title="Analizează ultimul log din sursa selectată (fără path explicit)."
+                >
+                  Analiză — ultimul fișier
+                </button>
+                <button
+                  id="btnReportLatest"
+                  type="button"
+                  title="Raport Markdown pentru ultimul log din sursa selectată."
+                >
+                  Raport — ultimul fișier
+                </button>
+                <button
+                  id="btnReportCase"
+                  type="button"
+                  title="Raport „caz” din ultimul autoscan + measuring din același interval (heuristic)."
+                >
+                  Raport caz (autoscan + măsurători)
+                </button>
+              </div>
+              <div class="flow-step-label">4 · Fișierul ales mai jos din listă</div>
+              <div class="split">
+                <div>
+                  <label for="pickedPath" class="label-row">
+                    Primul fișier (analiză / raport)
+                    <span
+                      class="field-tip"
+                      title="Se umple după Actualizează lista. Path absolut trimis la analyze/report/log-raw."
+                      aria-label="Log selectat din lista /logs"
+                      >i</span>
+                  </label>
+                  <select id="pickedPath" title="Alege un fișier din răspunsul GET /logs pentru acțiunile din dreapta."></select>
+                </div>
+                <div>
+                  <label for="pickedPathB" class="label-row">
+                    Al doilea fișier (compară)
+                    <span
+                      class="field-tip"
+                      title="Același tip de listă; folosește împreună cu „Compară analizele”. API: GET /analyze-log pentru fiecare."
+                      aria-label="Al doilea log pentru comparație"
+                      >i</span>
+                  </label>
+                  <select id="pickedPathB" title="Al doilea fișier pentru comparație (aceeași sursă)."></select>
+                </div>
+              </div>
+              <div class="row">
+                <button id="btnAnalyzePicked" type="button" title="Parsare fault-uri / measuring pentru fișierul selectat.">
+                  Analiză — fișierul selectat
+                </button>
+                <button id="btnReportPicked" type="button" title="Raport Markdown pentru fișierul selectat.">
+                  Raport — fișierul selectat
+                </button>
+                <button id="btnRawPicked" type="button" title="Conținut brut text al logului selectat.">
+                  Text brut log
+                </button>
+                <button
+                  id="btnDownloadReport"
+                  type="button"
+                  title="Descarcă ultimul raport JSON ca fișier .md dacă răspunsul conține report_markdown."
+                >
+                  Descarcă raportul (.md)
+                </button>
+                <button
+                  id="btnCompareAnalyzes"
+                  type="button"
+                  title="API: două apeluri GET /analyze-log — rezumat în tabul Raport (Markdown), JSON combinat în Detalii."
+                >
+                  Compară analizele
+                </button>
+                <button
+                  id="btnCompareReports"
+                  type="button"
+                  title="API: două apeluri GET /report-log — rapoarte Markdown alăturate în tabul Raport, JSON combinat în Detalii."
+                >
+                  Compară rapoartele
+                </button>
+              </div>
+              <div class="flow-step-label">5 · Raport din Auto-Scan + măsurători (ales)</div>
+              <div class="row">
+                <div style="flex: 1 1 420px">
+                  <label for="pickedAutoscan" class="label-row">
+                    Auto-Scan (ales)
+                    <span
+                      class="field-tip"
+                      title="Subset din /logs (kind autoscan). Folosit la report-case-from împreună cu Measuring."
+                      aria-label="Autoscan pentru report-case-from"
+                      >i</span>
+                  </label>
+                  <select id="pickedAutoscan" title="Fișier autoscan pentru raport combinat."></select>
+                </div>
+                <div style="flex: 1 1 420px">
+                  <label for="pickedMeasuring" class="label-row">
+                    Measuring (opțional)
+                    <span
+                      class="field-tip"
+                      title="Opțional: fișier measuring blocks. Poate rămâne gol — API alege automat în unele cazuri."
+                      aria-label="Measuring opțional pentru report-case-from"
+                      >i</span>
+                  </label>
+                  <select id="pickedMeasuring" title="Blocuri de măsurători (opțional) pentru report-case-from."></select>
+                </div>
+                <button
+                  id="btnCaseFrom"
+                  type="button"
+                  title="Raport caz: autoscan + measuring în fereastra window_hours din Settings."
+                >
+                  Raport caz (Auto-Scan + Measuring)
+                </button>
+              </div>
+              <div class="muted" style="margin-top: 10px">
+                Lasă panoul închis când nu ai nevoie de el; deschide-l ca să folosești butoanele și selectoarele (când e
+                închis, acțiunile din Actions nu sunt la îndemână în UI).
+              </div>
+            </div>
+          </details>
+
+          <div id="ragSectionWrap" class="rag-section-wrap rag-section-wrap--hidden">
+          <details class="panel-collapsible zone-rag" id="ragIngestDetails">
+            <summary>
+              <span class="panel-summary-title">Index documente / notițe<span class="tag-advanced">Avansat</span></span>
+              <span class="panel-summary-hint">Manual, PDF-uri — pentru căutare și context chat (nu înlocuiește logul VCDS)</span>
+            </summary>
+            <div class="panel-body">
+              <div class="info-tips" role="note" aria-label="Indicații RAG ingest">
+                <strong>Cu ce se deosebește de Actions</strong>
+                <ul>
+                  <li>
+                    Aici <strong>alimentezi indexul</strong> (Chroma în <span class="mono">VECTORSTORE_DIR</span>): notițe
+                    și documente pentru <span class="mono">GET /search</span> și pentru contextul din Chat.
+                  </li>
+                  <li>
+                    Nu înlocuiește <span class="mono">GET /logs</span> — logurile de diagnoză rămân în
+                    <span class="mono">UPLOADED_LOGS_DIR</span> / <span class="mono">VCDS_LOG_DIR</span>.
+                  </li>
+                  <li>
+                    Flux: (1) text scurt sau (2) fișiere → apoi (3) <span class="mono">GET /search</span> cu un cuvânt
+                    din conținut ca să verifici că s-a indexat.
+                  </li>
+                </ul>
+              </div>
+              <div class="flow-step-label">1 · Adaugă o notiță în index</div>
+              <div class="split">
+                <div>
+                  <label for="noteSource" class="label-row">
+                    Etichetă în index (metadate)
+                    <span
+                      class="field-tip"
+                      title="Etichetă în metadate (ex. ui_note, forum). Apare în chunk-uri la căutare."
+                      aria-label="Sursă metadate ingest text"
+                      >i</span>
+                  </label>
+                  <input id="noteSource" type="text" value="ui_note" title="Identificator sursă pentru chunk-uri RAG." />
+                  <div style="height: 10px"></div>
+                  <label for="noteTitle" class="label-row">
+                    Titlu notiței (opțional)
+                    <span class="field-tip" title="Titlu opțional, tot în metadate; util la citări." aria-label="Titlu opțional"
+                      >i</span>
+                  </label>
+                  <input
+                    id="noteTitle"
+                    type="text"
+                    placeholder="ex: P0299 - vacuum leak + N75 checks"
+                    title="Titlu scurt pentru notă (opțional)."
+                  />
+                  <div style="height: 10px"></div>
+                  <label for="noteText" class="label-row">
+                    Text de indexat
+                    <span
+                      class="field-tip"
+                      title="Conținutul care intră în index ca fragmente (chunk-uri). Nu trimite date personale sau copyright nepermis."
+                      aria-label="Text de indexat"
+                      >i</span>
+                  </label>
+                  <textarea
+                    id="noteText"
+                    placeholder="Lipește aici notițe / rezumat / link-uri (respectă drepturile de autor)."
+                    title="Textul indexat în RAG după POST /ingest-text."
+                  ></textarea>
+                  <div style="height: 10px"></div>
+                  <div class="row">
+                    <button
+                      id="btnIngest"
+                      type="button"
+                      title="Adaugă textul din formular în colecția RAG locală (fără legătură cu folderul de loguri)."
+                    >
+                      Salvează notița în index
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <div class="muted">
+                    După ingest, rulează <span class="mono">GET /search</span> cu un cuvânt-cheie din notiță ca să verifici
+                    că a intrat în index.
+                  </div>
+                </div>
+              </div>
+              <div class="flow-step-label">2 · Încarcă documente în index (PDF / MD / TXT)</div>
+              <div class="split">
+                <div>
+                  <input
+                    id="docFiles"
+                    type="file"
+                    multiple
+                    title="Selectează unul sau mai multe fișiere; fiecare e copiat în INGEST_UPLOADS_DIR și chunk-uit."
+                  />
+                  <div style="height: 10px"></div>
+                  <div class="row">
+                    <button
+                      id="btnIngestFiles"
+                      type="button"
+                      title="Încarcă fișierele alese: extragere text (PDF cu pypdf), apoi index RAG."
+                    >
+                      Indexează fișierele alese
+                    </button>
+                  </div>
+                  <div class="muted" style="margin-top: 8px">
+                    Acceptă: <span class="mono">.pdf</span>, <span class="mono">.md</span>, <span class="mono">.txt</span>
+                    (max 25MB/fișier).
+                  </div>
+                </div>
+                <div>
+                  <div class="muted">
+                    PDF-urile sunt transformate în text pe pagini (best-effort). Pentru scheme electrice scanate
+                    (imagini), textul poate lipsi; OCR rămâne în afara scope-ului curent.
+                  </div>
+                </div>
+              </div>
+              <div class="muted" style="margin-top: 10px">
+                Lasă panoul închis când nu adaugi cunoștințe; deschide-l pentru formulare și indicații.
+              </div>
+            </div>
+          </details>
+          </div>
+
+          <details class="panel-collapsible zone-chat" id="chatSearchDetails">
+            <summary>
+              <span class="panel-summary-title">Întrebări la asistent</span>
+              <span class="panel-summary-hint">Mesaj către model, opțional cu log și căutare în documente</span>
+            </summary>
+            <div class="panel-body">
+              <div class="info-tips" role="note" aria-label="Indicații chat">
+                <strong>Pe scurt</strong>
+                <ul>
+                  <li>
+                    <span class="mono">POST /chat</span> combină mesajul tău cu bucăți din index (RAG) și, dacă bifezi,
+                    cu ultimul log sau snapshot-uri JSON (ca în Actions).
+                  </li>
+                  <li>
+                    <span class="mono">GET /search</span> interoghează <strong>doar</strong> indexul — nu trimite mesaj
+                    la model; util după ingest sau pentru depanare.
+                  </li>
+                </ul>
+              </div>
+              <div class="flow-step-label">1 · Întrebarea ta</div>
+              <div class="split">
+                <div>
+                  <label for="chatMessage" class="label-row">
+                    Mesaj către asistent
+                    <span
+                      class="field-tip"
+                      title="Întrebarea către agent. Poate face referire la coduri, simptome; contextul vine din bifări + RAG."
+                      aria-label="Mesaj chat"
+                      >i</span>
+                  </label>
+                  <textarea
+                    id="chatMessage"
+                    placeholder="Ex: Tocmai am făcut o scanare, vezi ce a apărut nou."
+                    title="Conținutul principal trimis la POST /chat."
+                  ></textarea>
+                  <div style="height: 10px"></div>
+                  <div class="row">
+                    <label
+                      style="display: inline-flex; align-items: center; gap: 8px"
+                      title="API: include_latest_uploaded_log — atașează ultimul fișier din UPLOADED_LOGS_DIR."
+                    >
+                      <input id="incUploaded" type="checkbox" checked />
+                      Include ultimul fișier încărcat
+                    </label>
+                    <label
+                      style="display: inline-flex; align-items: center; gap: 8px"
+                      title="API: include_latest_vcds_log — atașează ultimul log din VCDS_LOG_DIR."
+                    >
+                      <input id="incVcds" type="checkbox" />
+                      Include ultimul log din folderul VCDS
+                    </label>
+                    <button
+                      id="btnChat"
+                      type="button"
+                      title="Trimite mesajul cu opțiunile bifate către API (OpenAI sau fallback dacă LLM_MODE=disabled)."
+                    >
+                      Trimite întrebarea
+                    </button>
+                    <button
+                      id="btnFillDtcPrompt"
+                      type="button"
+                      title="Inserează în mesaj o cerere standard: coduri DTC, rezumat scurt, pași de verificare (nu înlocuiește manualul oficial)."
+                    >
+                      Șablon: coduri + rezumat
+                    </button>
+                  </div>
+                  <div style="height: 8px"></div>
+                  <div class="row">
+                    <label
+                      style="display: inline-flex; align-items: center; gap: 8px"
+                      title="API: include_uploaded_snapshot — JSON uploaded-context (listă + log)."
+                    >
+                      <input id="snapUploaded" type="checkbox" />
+                      Snapshot fișiere încărcate (JSON)
+                    </label>
+                    <label
+                      style="display: inline-flex; align-items: center; gap: 8px"
+                      title="API: include_vcds_snapshot — JSON vcds-context. Necesită VCDS_LOG_DIR."
+                    >
+                      <input id="snapVcds" type="checkbox" />
+                      Snapshot VCDS (JSON)
+                    </label>
+                  </div>
+                  <div style="height: 8px"></div>
+                  <label for="snapUploadedPath" class="label-row">
+                    <span>Cale snapshot fișiere încărcate (opțional)</span>
+                    <span
+                      class="field-tip"
+                      title="Forțează un fișier anume din UPLOADED_LOGS_DIR în snapshot. Gol = latest."
+                      aria-label="Path snapshot uploaded"
+                      >i</span>
+                  </label>
+                  <input
+                    id="snapUploadedPath"
+                    type="text"
+                    placeholder="Lasă gol pentru latest; sau path din /logs"
+                    title="Path absolut; API: uploaded_snapshot_path. Gol = ultimul fișier."
+                  />
+                  <div style="height: 8px"></div>
+                  <label for="snapVcdsPath" class="label-row">
+                    <span>Cale snapshot VCDS (opțional)</span>
+                    <span
+                      class="field-tip"
+                      title="Forțează un fișier din VCDS_LOG_DIR. Gol = latest. Necesită VCDS_LOG_DIR setat."
+                      aria-label="Path snapshot VCDS"
+                      >i</span>
+                  </label>
+                  <input
+                    id="snapVcdsPath"
+                    type="text"
+                    placeholder="Lasă gol pentru latest; necesită VCDS_LOG_DIR"
+                    title="Path absolut; API: vcds_snapshot_path. Gol = ultimul log VCDS."
+                  />
+                  <div style="height: 8px"></div>
+                  <div class="row">
+                    <button type="button" id="btnUseSelectedForSnapshot" title="Copiază logul ales în Actions în câmpurile de snapshot și bifează checkbox-urile.">
+                      Folosește logul din listă pentru snapshot
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <div class="muted">
+                    În fallback (<span class="mono">LLM_MODE=disabled</span>), răspunsul e determinist din parsare +
+                    pași + referințe din index. Snapshot-urile folosesc același JSON ca
+                    <span class="mono">/uploaded-context</span> / <span class="mono">/vcds-context</span>.
+                  </div>
+                </div>
+              </div>
+              <div id="chatSearchBlock">
+                <div class="flow-step-label">2 · Caută în documentele indexate (fără chat)</div>
+                <div class="row">
+                  <input
+                    id="searchQ"
+                    type="text"
+                    placeholder="Search query (ex: P0299 underboost N75 vacuum)"
+                    title="Interogare semantică / lexicală în vector store; nu apelează modelul de chat."
+                  />
+                  <button id="btnSearch" type="button" title="Returnează până la k chunk-uri din RAG (parametrul k din Settings).">
+                    Caută în index
+                  </button>
+                </div>
+                <div class="muted" style="margin-top: 8px">
+                  Răspunsul apare în Output mai jos (JSON / TEXT / MARKDOWN). Rapoartele cu
+                  <span class="mono">report_markdown</span> se afișează în tabul Markdown.
+                </div>
+              </div>
+              <div id="chatSearchRagOffHint" class="muted" style="display: none; margin-top: 8px">
+                Căutarea în index e ascunsă cât timp „Index documente (RAG)” e dezactivat mai sus. Bifează ca să
+                activezi din nou panoul RAG și căutarea.
+              </div>
+              <div class="muted" style="margin-top: 10px">
+                Poți lăsa panoul închis; deschide când trimiți chat sau căutări.
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <div class="card">
+          <h2>Output</h2>
+          <div class="row" style="justify-content: space-between">
+            <span id="outStatus" class="status"></span>
+            <button id="btnClear" type="button">
+              Golește ecranul
+            </button>
+          </div>
+          <div class="tabs">
+            <button class="tabbtn active" id="tabJson">
+              Detalii (JSON)
+            </button>
+            <button class="tabbtn" id="tabText">
+              Text brut
+            </button>
+            <button class="tabbtn" id="tabMd">
+              Raport (Markdown)
+            </button>
+          </div>
+          <div class="row" style="margin-top: 8px">
+            <button
+              type="button"
+              id="btnPrintReport"
+              title="Deschide o fereastră cu conținutul din Raport (Markdown) și dialogul de print al browserului."
+            >
+              Printează raportul
+            </button>
+            <button
+              type="button"
+              id="btnDownloadReportHtml"
+              title="Descarcă un fișier HTML cu același conținut ca în tabul Raport (Markdown)."
+            >
+              Descarcă HTML
+            </button>
+          </div>
+          <div class="muted" style="margin-top: 6px">
+            PDF: din fereastra de print alege <strong>Salvare ca PDF / Save as PDF</strong> (funcție a browserului, fără
+            server suplimentar).
+          </div>
+          <div style="height: 10px"></div>
+          <div id="paneJson" class="pane active"><pre id="output" class="mono"></pre></div>
+          <div id="paneText" class="pane"><pre id="outputText" class="mono"></pre></div>
+          <div id="paneMd" class="pane"><div id="outputMd" class="md"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const apiBase = `${location.protocol}//${location.host}`;
+      document.getElementById("apiBase").textContent = apiBase;
+
+      const el = (id) => document.getElementById(id);
+      const output = el("output");
+      const outputText = el("outputText");
+      const outputMd = el("outputMd");
+      const outStatus = el("outStatus");
+      const pickedPath = el("pickedPath");
+      const pickedPathB = el("pickedPathB");
+      const pickedAutoscan = el("pickedAutoscan");
+      const pickedMeasuring = el("pickedMeasuring");
+
+      const RAG_SHOW_KEY = "audiVcdsShowRagIndex";
+      const CASE_HISTORY_KEY = "audiVcdsCaseHistory";
+
+      function syncRagSectionVisibility() {
+        const on = !!el("chkShowRagIndex").checked;
+        const wrap = el("ragSectionWrap");
+        wrap.classList.toggle("rag-section-wrap--hidden", !on);
+        localStorage.setItem(RAG_SHOW_KEY, on ? "1" : "0");
+        const searchBlock = el("chatSearchBlock");
+        const hint = el("chatSearchRagOffHint");
+        if (searchBlock) searchBlock.style.display = on ? "" : "none";
+        if (hint) hint.style.display = on ? "none" : "block";
+      }
+
+      function initRagToggleFromStorage() {
+        el("chkShowRagIndex").checked = localStorage.getItem(RAG_SHOW_KEY) === "1";
+        syncRagSectionVisibility();
+      }
+
+      el("chkShowRagIndex").addEventListener("change", syncRagSectionVisibility);
+
+      function setStatus(text, kind) {
+        outStatus.textContent = text || "";
+        outStatus.className = "status" + (kind ? ` ${kind}` : "");
+      }
+
+      function sourceHuman() {
+        const s = el("source").value;
+        if (s === "vcds") return "Folder VCDS pe server (VCDS_LOG_DIR)";
+        return "Fișiere încărcate în aplicație (upload)";
+      }
+
+      function updateWorkshopContext() {
+        const box = el("workshopContext");
+        if (!box) return;
+        const { source, limit, k, windowHours } = getSettings();
+        box.textContent =
+          `Sursă loguri: ${sourceHuman()} (parametru API: ${source}). ` +
+          `Listă: până la ${limit} fișiere. ` +
+          `Fereastră raport caz: ${windowHours} h. ` +
+          `Căutare în documente (index): max. ${k} fragmente. ` +
+          `Modifică în panoul „Sursă și limite”. ` +
+          `Nu trimite în câmpuri date personale; logurile sunt procesate pe acest server.`;
+      }
+
+      const CASE_KEYS = { vehicle: "audiVcdsCaseVehicle", vin: "audiVcdsCaseVin", symptom: "audiVcdsCaseSymptom" };
+
+      function loadCaseFields() {
+        el("caseVehicle").value = localStorage.getItem(CASE_KEYS.vehicle) || "";
+        el("caseVin").value = localStorage.getItem(CASE_KEYS.vin) || "";
+        el("caseSymptom").value = localStorage.getItem(CASE_KEYS.symptom) || "";
+      }
+
+      function saveCaseFields() {
+        localStorage.setItem(CASE_KEYS.vehicle, el("caseVehicle").value.trim());
+        localStorage.setItem(CASE_KEYS.vin, el("caseVin").value.trim());
+        localStorage.setItem(CASE_KEYS.symptom, el("caseSymptom").value.trim());
+        setStatus("Context caz salvat în browser.", "ok");
+      }
+
+      function clearCaseFields() {
+        el("caseVehicle").value = "";
+        el("caseVin").value = "";
+        el("caseSymptom").value = "";
+        localStorage.removeItem(CASE_KEYS.vehicle);
+        localStorage.removeItem(CASE_KEYS.vin);
+        localStorage.removeItem(CASE_KEYS.symptom);
+        setStatus("Context caz șters.", "ok");
+      }
+
+      function workshopCasePrefix() {
+        const vehicle = el("caseVehicle").value.trim();
+        const vin = el("caseVin").value.trim();
+        const symptom = el("caseSymptom").value.trim();
+        if (!vehicle && !vin && !symptom) return "";
+        let p = "[Context atelier]\n";
+        if (vehicle) p += `Mașină / notă: ${vehicle}\n`;
+        if (vin) p += `VIN: ${vin}\n`;
+        if (symptom) p += `Simptom / întrebare: ${symptom}\n`;
+        return `${p}\n---\n`;
+      }
+
+      loadCaseFields();
+      initRagToggleFromStorage();
+      renderCaseHistory();
+
+      el("btnCaseSave").addEventListener("click", saveCaseFields);
+      el("btnCaseClear").addEventListener("click", clearCaseFields);
+
+      el("btnCaseHistoryAdd").addEventListener("click", () => {
+        const vehicle = el("caseVehicle").value.trim();
+        const vin = el("caseVin").value.trim();
+        const symptom = el("caseSymptom").value.trim();
+        const logPath = (pickedPath.value || "").trim();
+        if (!vehicle && !vin && !symptom && !logPath) {
+          setStatus("Completează cel puțin un câmp sau alege un log înainte de a salva în istoric.", "error");
+          return;
+        }
+        const label = [vin || null, vehicle || null].filter(Boolean).join(" · ") || (logPath ? logPath.split("/").pop() : "Caz");
+        const entry = {
+          ts: Date.now(),
+          label,
+          vehicle,
+          vin,
+          symptom,
+          logPath: logPath || null,
+        };
+        const next = [entry, ...readCaseHistory()].slice(0, 20);
+        writeCaseHistory(next);
+        setStatus("Caz salvat în istoric.", "ok");
+      });
+
+      el("btnCaseHistoryClear").addEventListener("click", () => {
+        localStorage.removeItem(CASE_HISTORY_KEY);
+        renderCaseHistory();
+        setStatus("Istoric șters.", "ok");
+      });
+
+      for (const id of ["source", "limit", "k", "windowHours"]) {
+        el(id)?.addEventListener("change", updateWorkshopContext);
+        el(id)?.addEventListener("input", updateWorkshopContext);
+      }
+      updateWorkshopContext();
+
+      function getSettings() {
+        return {
+          source: el("source").value,
+          limit: Number(el("limit").value || 30),
+          windowHours: Number(el("windowHours").value || 6),
+          k: Number(el("k").value || 6),
+        };
+      }
+
+      async function apiGet(path) {
+        setStatus("Loading...", "");
+        const res = await fetch(`${apiBase}${path}`);
+        const text = await res.text();
+        if (!res.ok) {
+          setStatus(`Error ${res.status}`, "error");
+          output.textContent = text;
+          outputText.textContent = text;
+          outputMd.textContent = text;
+          return;
+        }
+        setStatus("OK", "ok");
+        try {
+          const j = JSON.parse(text);
+          output.textContent = JSON.stringify(j, null, 2);
+          outputText.textContent = text;
+          if (j?.report_markdown) {
+            outputMd.innerHTML = renderMarkdown(j.report_markdown);
+          } else if (j?.content && typeof j.content === "string" && j?.filename?.endsWith(".md")) {
+            outputMd.innerHTML = renderMarkdown(j.content);
+          } else if (j?.text && typeof j.text === "string") {
+            outputMd.textContent = j.text;
+          } else {
+            outputMd.textContent = "";
+          }
+        } catch {
+          output.textContent = text;
+          outputText.textContent = text;
+          outputMd.textContent = "";
+        }
+      }
+
+      function setPickedOptions(items) {
+        pickedPath.innerHTML = "";
+        pickedPathB.innerHTML = "";
+        for (const it of items || []) {
+          const opt = document.createElement("option");
+          opt.value = it.path;
+          opt.textContent = `${it.kind} — ${it.path}`;
+          pickedPath.appendChild(opt);
+          const optB = document.createElement("option");
+          optB.value = it.path;
+          optB.textContent = `${it.kind} — ${it.path}`;
+          pickedPathB.appendChild(optB);
+        }
+      }
+
+      function readCaseHistory() {
+        try {
+          const raw = localStorage.getItem(CASE_HISTORY_KEY);
+          const arr = JSON.parse(raw || "[]");
+          return Array.isArray(arr) ? arr : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function writeCaseHistory(entries) {
+        localStorage.setItem(CASE_HISTORY_KEY, JSON.stringify(entries.slice(0, 20)));
+        renderCaseHistory();
+      }
+
+      function renderCaseHistory() {
+        const ul = el("caseHistoryList");
+        ul.innerHTML = "";
+        for (const entry of readCaseHistory()) {
+          const li = document.createElement("li");
+          const btn = document.createElement("button");
+          btn.type = "button";
+          const when = new Date(entry.ts).toLocaleString();
+          const short = entry.label || `${entry.vehicle || ""} ${entry.vin || ""}`.trim() || "Caz";
+          btn.textContent = `${when} — ${short}`;
+          btn.title = "Restaurează câmpurile cazului (și logul dacă e în listă).";
+          btn.addEventListener("click", () => restoreCaseHistoryEntry(entry));
+          li.appendChild(btn);
+          ul.appendChild(li);
+        }
+      }
+
+      function restoreCaseHistoryEntry(entry) {
+        el("caseVehicle").value = entry.vehicle || "";
+        el("caseVin").value = entry.vin || "";
+        el("caseSymptom").value = entry.symptom || "";
+        if (entry.logPath) {
+          let found = false;
+          for (const sel of [pickedPath, pickedPathB]) {
+            for (const o of sel.options) {
+              if (o.value === entry.logPath) {
+                sel.value = entry.logPath;
+                found = true;
+                break;
+              }
+            }
+          }
+          if (!found) {
+            setStatus("Logul din istoric nu e în listă — apasă „Actualizează lista”.", "error");
+            return;
+          }
+        }
+        setStatus("Caz restaurat din istoric.", "ok");
+      }
+
+      function summarizeFaultsMd(faults) {
+        if (!faults || faults.length === 0) return "_Nu s-au extras coduri în acest răspuns._\n";
+        return faults
+          .slice(0, 60)
+          .map((f) => {
+            const code = f.code || "?";
+            const mod = f.module || "—";
+            const tx = f.text || "";
+            const st = f.status || "";
+            return `- **${code}** (${mod}) ${tx} ${st}`.trim();
+          })
+          .join("\n");
+      }
+
+      function buildCompareMarkdown(pathA, pathB, ja, jb) {
+        let md = `# Comparație — două analize\n\n`;
+        md += `## Fișier 1\n**Cale:** \`${pathA}\`\n\n**Format:** ${ja.format || "—"}\n\n### Coduri / defecțiuni\n${summarizeFaultsMd(ja.faults)}\n`;
+        if (ja.measuring_summary && Object.keys(ja.measuring_summary).length) {
+          md += `\n**Măsurători:** \`${JSON.stringify(ja.measuring_summary)}\`\n`;
+        }
+        md += `\n## Fișier 2\n**Cale:** \`${pathB}\`\n\n**Format:** ${jb.format || "—"}\n\n### Coduri / defecțiuni\n${summarizeFaultsMd(jb.faults)}\n`;
+        if (jb.measuring_summary && Object.keys(jb.measuring_summary).length) {
+          md += `\n**Măsurători:** \`${JSON.stringify(jb.measuring_summary)}\`\n`;
+        }
+        md += `\n---\n*JSON complet al ambelor răspunsuri: tab „Detalii (JSON)”.*\n`;
+        return md;
+      }
+
+      function printMarkdownReport() {
+        const inner = el("outputMd").innerHTML.trim();
+        if (!inner) {
+          setStatus("Nu există conținut în Raport (Markdown). Rulează mai întâi un raport sau o comparație.", "error");
+          return;
+        }
+        const w = window.open("", "_blank", "noopener,noreferrer");
+        if (!w) {
+          setStatus("Pop-up blocat — permite ferestre pentru acest site.", "error");
+          return;
+        }
+        const css = `body{font-family:system-ui,sans-serif;padding:24px;color:#111;background:#fff;}h1,h2,h3{margin:0.6em 0 0.3em;}pre,code{font-family:ui-monospace,Menlo,monospace;}`;
+        w.document.write(
+          `<!DOCTYPE html><html lang="ro"><head><meta charset="utf-8"/><title>Raport — Audi VCDS Master</title><style>${css}</style></head><body><h1>Raport</h1><div>${inner}</div><script>addEventListener("load",()=>{setTimeout(()=>print(),200);});<\/script></body></html>`
+        );
+        w.document.close();
+        setStatus("Fereastră de print deschisă.", "ok");
+      }
+
+      function downloadMarkdownAsHtml() {
+        const inner = el("outputMd").innerHTML.trim();
+        if (!inner) {
+          setStatus("Nu există conținut în Raport (Markdown).", "error");
+          return;
+        }
+        const doc = `<!DOCTYPE html><html lang="ro"><head><meta charset="utf-8"/><title>Raport Audi VCDS Master</title><style>body{font-family:system-ui,sans-serif;padding:24px;line-height:1.45;}pre{white-space:pre-wrap;}</style></head><body><h1>Raport</h1><div>${inner}</div></body></html>`;
+        const blob = new Blob([doc], { type: "text/html;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "audi-vcds-raport.html";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setStatus("HTML descărcat.", "ok");
+      }
+
+      function setCasePickers(items) {
+        pickedAutoscan.innerHTML = "";
+        pickedMeasuring.innerHTML = "";
+
+        const optNone = document.createElement("option");
+        optNone.value = "";
+        optNone.textContent = "(auto)";
+        pickedMeasuring.appendChild(optNone);
+
+        for (const it of items || []) {
+          if (it.kind === "autoscan") {
+            const o = document.createElement("option");
+            o.value = it.path;
+            o.textContent = it.path;
+            pickedAutoscan.appendChild(o);
+          }
+          if (it.kind === "measuring") {
+            const o = document.createElement("option");
+            o.value = it.path;
+            o.textContent = it.path;
+            pickedMeasuring.appendChild(o);
+          }
+        }
+      }
+
+      async function apiUpload(file) {
+        if (!file) return;
+        setStatus("Uploading...", "");
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch(`${apiBase}/upload-log`, { method: "POST", body: fd });
+        const text = await res.text();
+        if (!res.ok) {
+          setStatus(`Upload error ${res.status}`, "error");
+          output.textContent = text;
+          outputText.textContent = text;
+          outputMd.textContent = text;
+          return;
+        }
+        setStatus("Upload OK", "ok");
+        try {
+          const j = JSON.parse(text);
+          output.textContent = JSON.stringify(j, null, 2);
+          outputText.textContent = text;
+        } catch {
+          output.textContent = text;
+          outputText.textContent = text;
+          outputMd.textContent = "";
+        }
+      }
+
+      async function apiPostJson(path, body) {
+        setStatus("Loading...", "");
+        const res = await fetch(`${apiBase}${path}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          setStatus(`Error ${res.status}`, "error");
+          output.textContent = text;
+          outputText.textContent = text;
+          outputMd.textContent = text;
+          return;
+        }
+        setStatus("OK", "ok");
+        try {
+          const j = JSON.parse(text);
+          output.textContent = JSON.stringify(j, null, 2);
+          outputText.textContent = text;
+          if (j?.answer) outputMd.innerHTML = renderMarkdown(j.answer);
+        } catch {
+          output.textContent = text;
+          outputText.textContent = text;
+          outputMd.textContent = "";
+        }
+      }
+
+      function renderMarkdown(md) {
+        const esc = (s) =>
+          String(s)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;");
+
+        let html = esc(md);
+        html = html.replace(/```([\s\S]*?)```/g, (m, code) => `<pre class="mono">${esc(code)}</pre>`);
+        html = html.replace(/`([^`]+)`/g, (m, code) => `<code>${esc(code)}</code>`);
+        html = html.replace(/^###\s+(.*)$/gm, "<h3>$1</h3>");
+        html = html.replace(/^##\s+(.*)$/gm, "<h2>$1</h2>");
+        html = html.replace(/^#\s+(.*)$/gm, "<h1>$1</h1>");
+        html = html.replace(/^\-\s+(.*)$/gm, "<div>• $1</div>");
+        html = html.replace(/\n{2,}/g, "</div><div style=\"height:10px\"></div><div>");
+        html = `<div>${html}</div>`;
+        return html;
+      }
+
+      function setTab(tab) {
+        for (const [btn, pane] of [
+          [el("tabJson"), el("paneJson")],
+          [el("tabText"), el("paneText")],
+          [el("tabMd"), el("paneMd")],
+        ]) {
+          const active = btn.id === tab;
+          btn.classList.toggle("active", active);
+          pane.classList.toggle("active", active);
+        }
+      }
+
+      el("btnClear").addEventListener("click", () => {
+        output.textContent = "";
+        outputText.textContent = "";
+        outputMd.textContent = "";
+        setStatus("", "");
+      });
+
+      el("tabJson").addEventListener("click", () => setTab("tabJson"));
+      el("tabText").addEventListener("click", () => setTab("tabText"));
+      el("tabMd").addEventListener("click", () => setTab("tabMd"));
+
+      el("btnPrintReport").addEventListener("click", printMarkdownReport);
+      el("btnDownloadReportHtml").addEventListener("click", downloadMarkdownAsHtml);
+
+      el("btnFillDtcPrompt").addEventListener("click", () => {
+        el("chatMessage").value =
+          `Pe baza logului și a contextului bifat, te rog:\n` +
+          `1) Listează codurile de defecțiune (DTC) relevante dacă apar în date.\n` +
+          `2) Un rezumat în maximum 5 puncte pentru mecanic.\n` +
+          `3) Pași de verificare recomandați (fără a înlocui manualul de service oficial).\n`;
+        setStatus("Șablon inserat în mesaj — revizuiește și apasă „Trimite întrebarea”.", "ok");
+      });
+
+      el("btnUpload").addEventListener("click", async () => {
+        const file = el("fileInput").files?.[0];
+        await apiUpload(file);
+      });
+
+      async function fetchLogsList() {
+        const { source, limit } = getSettings();
+        setStatus("Loading...", "");
+        const res = await fetch(
+          `${apiBase}/logs?source=${encodeURIComponent(source)}&limit=${encodeURIComponent(limit)}`
+        );
+        const text = await res.text();
+        if (!res.ok) {
+          setStatus(`Error ${res.status}`, "error");
+          output.textContent = text;
+          outputText.textContent = text;
+          outputMd.textContent = "";
+          return false;
+        }
+        setStatus("OK", "ok");
+        let parsed;
+        try {
+          parsed = JSON.parse(text);
+          output.textContent = JSON.stringify(parsed, null, 2);
+          outputText.textContent = text;
+        } catch {
+          output.textContent = text;
+          outputText.textContent = text;
+        }
+        if (parsed?.items) setPickedOptions(parsed.items);
+        if (parsed?.items) setCasePickers(parsed.items);
+        return true;
+      }
+
+      el("btnLogs").addEventListener("click", async () => {
+        await fetchLogsList();
+      });
+
+      el("btnWorkshopQuickAnalyze").addEventListener("click", async () => {
+        const ok = await fetchLogsList();
+        if (!ok) return;
+        const { source } = getSettings();
+        await apiGet(`/analyze-latest-log?source=${encodeURIComponent(source)}`);
+      });
+
+      el("btnCompareAnalyzes").addEventListener("click", async () => {
+        const { source } = getSettings();
+        const pa = (pickedPath.value || "").trim();
+        const pb = (pickedPathB.value || "").trim();
+        if (!pa || !pb) {
+          setStatus("Alege două fișiere din liste (primul și al doilea).", "error");
+          return;
+        }
+        if (pa === pb) {
+          setStatus("Alege două fișiere diferite pentru comparație.", "error");
+          return;
+        }
+        setStatus("Comparare în curs…", "");
+        const urlA = `${apiBase}/analyze-log?source=${encodeURIComponent(source)}&path=${encodeURIComponent(pa)}`;
+        const urlB = `${apiBase}/analyze-log?source=${encodeURIComponent(source)}&path=${encodeURIComponent(pb)}`;
+        const [ra, rb] = await Promise.all([fetch(urlA), fetch(urlB)]);
+        const ta = await ra.text();
+        const tb = await rb.text();
+        if (!ra.ok || !rb.ok) {
+          setStatus(`Eroare comparație (${ra.status} / ${rb.status})`, "error");
+          output.textContent = `--- A ---\n${ta}\n\n--- B ---\n${tb}`;
+          outputText.textContent = output.textContent;
+          outputMd.textContent = "";
+          return;
+        }
+        let ja;
+        let jb;
+        try {
+          ja = JSON.parse(ta);
+          jb = JSON.parse(tb);
+        } catch {
+          setStatus("Răspuns JSON invalid la comparație.", "error");
+          return;
+        }
+        output.textContent = JSON.stringify({ file_a: ja, file_b: jb }, null, 2);
+        outputText.textContent = ta + "\n\n---\n\n" + tb;
+        outputMd.innerHTML = renderMarkdown(buildCompareMarkdown(pa, pb, ja, jb));
+        setTab("tabMd");
+        setStatus("Comparație gata — vezi tabul Raport.", "ok");
+      });
+
+      function buildCompareReportsMarkdown(pathA, pathB, ja, jb) {
+        const ma = ja.report_markdown || "_Fără report_markdown._\n";
+        const mb = jb.report_markdown || "_Fără report_markdown._\n";
+        return (
+          `# Comparație — două rapoarte Markdown\n\n## Fișier 1\n**Cale:** \`${pathA}\`\n\n${ma}\n\n---\n\n## Fișier 2\n**Cale:** \`${pathB}\`\n\n${mb}\n`
+        );
+      }
+
+      el("btnCompareReports").addEventListener("click", async () => {
+        const { source } = getSettings();
+        const pa = (pickedPath.value || "").trim();
+        const pb = (pickedPathB.value || "").trim();
+        if (!pa || !pb) {
+          setStatus("Alege două fișiere din liste (primul și al doilea).", "error");
+          return;
+        }
+        if (pa === pb) {
+          setStatus("Alege două fișiere diferite pentru comparație.", "error");
+          return;
+        }
+        setStatus("Comparare rapoarte…", "");
+        const urlA = `${apiBase}/report-log?source=${encodeURIComponent(source)}&path=${encodeURIComponent(pa)}`;
+        const urlB = `${apiBase}/report-log?source=${encodeURIComponent(source)}&path=${encodeURIComponent(pb)}`;
+        const [ra, rb] = await Promise.all([fetch(urlA), fetch(urlB)]);
+        const ta = await ra.text();
+        const tb = await rb.text();
+        if (!ra.ok || !rb.ok) {
+          setStatus(`Eroare comparație rapoarte (${ra.status} / ${rb.status})`, "error");
+          output.textContent = `--- A ---\n${ta}\n\n--- B ---\n${tb}`;
+          outputText.textContent = output.textContent;
+          outputMd.textContent = "";
+          return;
+        }
+        let ja;
+        let jb;
+        try {
+          ja = JSON.parse(ta);
+          jb = JSON.parse(tb);
+        } catch {
+          setStatus("Răspuns JSON invalid la comparație rapoarte.", "error");
+          return;
+        }
+        output.textContent = JSON.stringify({ report_a: ja, report_b: jb }, null, 2);
+        outputText.textContent = ta + "\n\n---\n\n" + tb;
+        outputMd.innerHTML = renderMarkdown(buildCompareReportsMarkdown(pa, pb, ja, jb));
+        setTab("tabMd");
+        setStatus("Comparație rapoarte gata — vezi tabul Raport.", "ok");
+      });
+
+      el("btnStatus").addEventListener("click", async () => {
+        await apiGet(`/status`);
+      });
+
+      el("btnVcdsContext").addEventListener("click", async () => {
+        const { source } = getSettings();
+        const path = source === "vcds" && pickedPath.value ? pickedPath.value : "";
+        const qp = path
+          ? `path=${encodeURIComponent(path)}&recent_limit=15&max_bytes=250000`
+          : `recent_limit=15&max_bytes=250000`;
+        await apiGet(`/vcds-context?${qp}`);
+      });
+
+      el("btnUploadedContext").addEventListener("click", async () => {
+        const { source } = getSettings();
+        const path = source === "uploaded" && pickedPath.value ? pickedPath.value : "";
+        const qp = path
+          ? `path=${encodeURIComponent(path)}&recent_limit=15&max_bytes=250000`
+          : `recent_limit=15&max_bytes=250000`;
+        await apiGet(`/uploaded-context?${qp}`);
+      });
+
+      el("btnAnalyze").addEventListener("click", async () => {
+        const { source } = getSettings();
+        await apiGet(`/analyze-latest-log?source=${encodeURIComponent(source)}`);
+      });
+
+      el("btnReportLatest").addEventListener("click", async () => {
+        const { source } = getSettings();
+        await apiGet(`/report-latest-log?source=${encodeURIComponent(source)}`);
+      });
+
+      el("btnReportCase").addEventListener("click", async () => {
+        const { source, windowHours } = getSettings();
+        await apiGet(
+          `/report-case?source=${encodeURIComponent(source)}&window_hours=${encodeURIComponent(windowHours)}`
+        );
+      });
+
+      el("btnAnalyzePicked").addEventListener("click", async () => {
+        const { source } = getSettings();
+        const path = pickedPath.value || "";
+        await apiGet(`/analyze-log?source=${encodeURIComponent(source)}&path=${encodeURIComponent(path)}`);
+      });
+
+      el("btnReportPicked").addEventListener("click", async () => {
+        const { source } = getSettings();
+        const path = pickedPath.value || "";
+        await apiGet(`/report-log?source=${encodeURIComponent(source)}&path=${encodeURIComponent(path)}`);
+      });
+
+      el("btnRawPicked").addEventListener("click", async () => {
+        const { source } = getSettings();
+        const path = pickedPath.value || "";
+        await apiGet(`/log-raw?source=${encodeURIComponent(source)}&path=${encodeURIComponent(path)}`);
+      });
+
+      el("btnDownloadReport").addEventListener("click", async () => {
+        const { source } = getSettings();
+        const path = pickedPath.value || "";
+        setStatus("Loading...", "");
+        const res = await fetch(
+          `${apiBase}/report-log.md?source=${encodeURIComponent(source)}&path=${encodeURIComponent(path)}`
+        );
+        const text = await res.text();
+        if (!res.ok) {
+          setStatus(`Error ${res.status}`, "error");
+          output.textContent = text;
+          outputText.textContent = text;
+          outputMd.textContent = text;
+          return;
+        }
+        setStatus("OK", "ok");
+        let payload;
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          output.textContent = text;
+          outputText.textContent = text;
+          return;
+        }
+        output.textContent = JSON.stringify(payload, null, 2);
+        outputText.textContent = payload.content || "";
+        outputMd.innerHTML = renderMarkdown(payload.content || "");
+
+        const blob = new Blob([payload.content || ""], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = payload.filename || "report.md";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      el("btnSearch").addEventListener("click", async () => {
+        const { k } = getSettings();
+        const q = el("searchQ").value || "";
+        await apiGet(`/search?q=${encodeURIComponent(q)}&k=${encodeURIComponent(k)}`);
+      });
+
+      el("btnUseSelectedForSnapshot").addEventListener("click", () => {
+        const path = (pickedPath.value || "").trim();
+        if (!path) {
+          setStatus("Selectează mai întâi un log din listă (apasă „Actualizează lista”).", "error");
+          return;
+        }
+        const { source } = getSettings();
+        if (source === "uploaded") {
+          el("snapUploaded").checked = true;
+          el("snapUploadedPath").value = path;
+        } else {
+          el("snapVcds").checked = true;
+          el("snapVcdsPath").value = path;
+        }
+        setStatus("Path copiat în snapshot; apoi „Trimite întrebarea” din Chat.", "ok");
+      });
+
+      el("btnChat").addEventListener("click", async () => {
+        const prefix = workshopCasePrefix();
+        const message = prefix + (el("chatMessage").value || "");
+        const include_latest_uploaded_log = !!el("incUploaded").checked;
+        const include_latest_vcds_log = !!el("incVcds").checked;
+        const include_uploaded_snapshot = !!el("snapUploaded").checked;
+        const include_vcds_snapshot = !!el("snapVcds").checked;
+        const uploaded_snapshot_path = include_uploaded_snapshot
+          ? (el("snapUploadedPath").value || "").trim() || null
+          : null;
+        const vcds_snapshot_path = include_vcds_snapshot
+          ? (el("snapVcdsPath").value || "").trim() || null
+          : null;
+        await apiPostJson(`/chat`, {
+          message,
+          include_latest_uploaded_log,
+          include_latest_vcds_log,
+          include_uploaded_snapshot,
+          include_vcds_snapshot,
+          uploaded_snapshot_path,
+          vcds_snapshot_path,
+        });
+      });
+
+      el("btnCaseFrom").addEventListener("click", async () => {
+        const { source, windowHours } = getSettings();
+        const autoscan_path = pickedAutoscan.value || "";
+        const measuring_path = pickedMeasuring.value || "";
+        await apiGet(
+          `/report-case-from?source=${encodeURIComponent(source)}` +
+            `&autoscan_path=${encodeURIComponent(autoscan_path)}` +
+            `&measuring_path=${encodeURIComponent(measuring_path)}` +
+            `&window_hours=${encodeURIComponent(windowHours)}`
+        );
+      });
+
+      el("btnIngest").addEventListener("click", async () => {
+        const source = el("noteSource").value || "ui_note";
+        const title = el("noteTitle").value || "";
+        const text = el("noteText").value || "";
+        await apiPostJson(`/ingest-text`, { source, title: title || null, text });
+      });
+
+      el("btnIngestFiles").addEventListener("click", async () => {
+        const input = el("docFiles");
+        const files = input.files;
+        if (!files || files.length === 0) {
+          setStatus("Select files first.", "error");
+          return;
+        }
+        setStatus("Uploading...", "");
+        const fd = new FormData();
+        for (const f of files) fd.append("files", f);
+        const res = await fetch(`${apiBase}/ingest-files`, { method: "POST", body: fd });
+        const text = await res.text();
+        if (!res.ok) {
+          setStatus(`Error ${res.status}`, "error");
+          output.textContent = text;
+          outputText.textContent = text;
+          outputMd.textContent = text;
+          return;
+        }
+        setStatus("OK", "ok");
+        try {
+          const j = JSON.parse(text);
+          output.textContent = JSON.stringify(j, null, 2);
+          outputText.textContent = text;
+          outputMd.textContent = "";
+        } catch {
+          output.textContent = text;
+          outputText.textContent = text;
+          outputMd.textContent = "";
+        }
+      });
+    </script>
+  </body>
+</html>
+

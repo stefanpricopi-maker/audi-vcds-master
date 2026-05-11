@@ -1,0 +1,15 @@
+; VCDS Measuring Blocks log (synthetic) — parser test
+; Columns often come as semicolon separated.
+TIME;Engine speed (RPM);Boost pressure specified (mbar);Boost pressure actual (mbar);N75 Duty (%);MAF (mg/str)
+0.00;1500;1900;1750;65;420
+0.50;1700;2000;1780;72;520
+1.00;1900;2100;1820;78;610
+1.50;2100;2200;1850;82;700
+2.00;2300;2300;1880;85;780
+2.50;2500;2350;1900;86;820
+3.00;2700;2400;1910;88;860
+3.50;2900;2450;1920;89;900
+4.00;3100;2500;1930;90;920
+4.50;3300;2500;1940;91;930
+5.00;3500;2500;1950;92;940
+
